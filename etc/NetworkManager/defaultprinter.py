@@ -158,8 +158,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='0.1.0')
 parser.add_argument('-u', '--conn-uuid', dest='connuuid', metavar='CON_UUID',
         nargs='+', action='append', help="""one or more uuids of nm-connections""")
-parser.add_argument('-n', '--conn-name', dest='connname', metavar='CON_NAME', 
-        nargs='+', action='append', help="""one or more names of nm-connections""")
+parser.add_argument('-i', '--conn-name', dest='connname', metavar='CON_ID', 
+        nargs='+', action='append', help="""one or more id's of nm-connections""")
 parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE', 
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
