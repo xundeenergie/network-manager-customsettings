@@ -1,10 +1,10 @@
 # nm-defaultprinter
 
-*!!!ACHTUNG!!!
+**!!!ACHTUNG!!!
 
 Allfällige Kommentare gehen in den Konfigurationsskripten des NetworkManagers und den Verbindungen durch Anwendung dieses Paketes verloren!!!
 
-!!!ACHTUNG!!!*
+!!!ACHTUNG!!!**
 
 In NetworkManager vermisse ich die Funktion, pro Verbindung einen Standard-Drucker festlegen zu können, der in CUPS auch bei Aktivierung dieser Verbindung durch NetworkManager auch festgelegt wird.
 
