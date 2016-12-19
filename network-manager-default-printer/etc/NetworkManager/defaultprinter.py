@@ -6,6 +6,8 @@ import subprocess
 import socket
 import os
 import errno
+import cups
+
 
 __author__ = "Jakobus Schuerz <jakobus.schuerz@gmail.com>"
 __version__ = "0.01.0"
@@ -152,7 +154,7 @@ def changePrinter(args):
         X = Config()
     X.changePrinter()
 
-
+con= cups.Connection()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='0.1.0')
@@ -164,8 +166,8 @@ parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE',
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
 parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-        dest='printer', help='''CUPS Printer-Name to set default-Printer for
-        connections''')
+        dest='printer', help="""CUPS Printer-Name to set default-Printer for
+        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
 parser.add_argument('-C', action='store_true', default=False, help="""Change
         the DefaultPrinter according to settings in
         network-manager-config-files""")
@@ -205,7 +207,7 @@ if __name__ == '__main__':
         nmconfiles[i] = ConfigParser()
         nmconfiles[i].read(args.scpath+'/'+i)
 
-    #print(args.connname, args.connuuid)
+    #print(args.connname, args.connuuid, args.connfile)
     for i in nmconfiles.keys():
         #print('A',i,nmconfiles[i]['connection']['id'],nmconfiles[i]['connection']['uuid'])
         for n in args.connname:
@@ -220,10 +222,9 @@ if __name__ == '__main__':
     args.cf = list()
 
     for f in set(args.connfile):
-        if f[1] == '/':
-            if os.path.isfile(f):
-                args.cf.append(f)
-                continue
+        if f[0] == '/' and os.path.isfile(f):
+            args.cf.append(f)
+            continue
         elif os.path.isfile(args.scpath+'/'+f):
             args.cf.append(args.scpath+'/'+f)
             continue
