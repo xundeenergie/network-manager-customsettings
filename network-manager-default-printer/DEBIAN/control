@@ -1,5 +1,5 @@
 Package: network-manager-defaultprinter
-Version: 0.1
+Version: 0.2
 Section: network
 Priority: extra
 Architecture: all

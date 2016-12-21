@@ -30,81 +30,90 @@ def s2bool(s):
 class Error(Exception):
     pass
 
-class SetPrinterError(Error):
+class ESETPRINTER(Error):
     def __init__(self):
         print("ERROR - Setting default printer" )
     pass
 
-class Config():
-    def __init__(self,nmconf='/etc/NetworkManager/NetworkManager.conf',conn='', setprinter='unset'):
-        self.printer = None
-        self.setprinter = setprinter
-        self.nmcfile = nmconf
-        self.concfile = conn
-        #self.nmcfile = '/tmp/nmc'
-        #self.concfile = '/tmp/conc'
-        self.nmconf = ConfigParser()
-        self.nmconf.read(nmconf)
+class ENOCFILE(Error):
+    def __init__(self):
+        print("ERROR - No connection-file found" )
+    pass
 
-        self.conn = conn
-        self.conconf = ConfigParser()
+class CaseConfigParser(ConfigParser): 
+    def optionxform(self, optionstr): 
+        return optionstr
+
+class Config():
+    def __init__(self, conf='', nmconf='/etc/NetworkManager/NetworkManager.conf'):
+        if nmconf == None: 
+            raise ENOCFILE
+        elif conf == nmconf:
+            #print("Work on NetworkManager.conf")
+            self.won = True #won = work on NetworkManager.conf
+        else:
+            self.won = False
 
         if os.path.exists(nmconf): 
+            self.nmconf = CaseConfigParser()
             self.nmconf.read(nmconf)
         else:
-            print('Missing config: %s' % (self.nmconf))
-        
-        if os.path.exists(conn): 
-            self.conconf.read(self.conn)
-        self.dp = self.getNMDefaultPrinter()
+            print('Missing config: %s' % (nmconf))
+            raise ENOCFILE
 
-    def getNMDefaultPrinter(self):
-        ret = list()
-        for i in self.nmconf:
-            if i == 'custom' and self.nmconf.has_option('custom','DefaultPrinter'):
-                ret.append(self.nmconf.get(i,'DefaultPrinter').strip('''"' '''))
-        return None if len(ret) == 0 else ret[len(ret)-1]
-            
-
-    def getPrinter(self,nm=False):
-        if self.conn != '' or self.setprinter == 'unset':
-            for i in self.conconf:
-                if i == 'custom':
-                    self.printer = self.conconf.get(i,'DefaultPrinter').strip('''"' ''')
-            return(self.dp if self.printer == None else self.printer)
+        if os.path.exists(conf): 
+            self.conffile = conf
+            self.conf = CaseConfigParser()
+            self.conf.read(conf)
         else:
-            return(self.dp)
+            print('Missing config: %s' % (conf))
+            raise ENOCFILE
+
+        self.nmpr = self.getDefaultPrinter(c=self.nmconf)
+        self.cpr = self.getDefaultPrinter(c=self.conf)
+
+    def getDefaultPrinter(self,c=None):
+        if 'custom' in c:
+            if 'DefaultPrinter' in c['custom']:
+                return(c['custom']['DefaultPrinter'])
+            else:
+                return(None)
+
+    def getPrinter(self):
+        #print(self.cpr,self.nmpr)
+        if self.cpr == None:
+            if self.nmpr == None:
+                return None
+            else:
+                return self.nmpr
+        else:
+            return self.cpr
 
     def setPrinter(self,printer=None,nm=False):
         if printer == None:
-            if nm:
-                self.nmconf.remove_option('custom','DefaultPrinter')
-                if len(self.nmconf.options('custom')) == 0:
-                    self.nmconf.remove_section('custom')
-            else:
-                self.conconf.remove_option('custom','DefaultPrinter')
-                if len(self.conconf.options('custom')) == 0:
-                    self.conconf.remove_section('custom')
+            self.conf.remove_option('custom','DefaultPrinter')
+            if len(self.conf.options('custom')) == 0:
+                self.conf.remove_section('custom')
         else:
-            if nm:
-                self.nmconf['custom'] = {'DefaultPrinter':printer}
-            else:
-                self.conconf['custom'] = {'DefaultPrinter':printer}
+            self.conf['custom'] = {'DefaultPrinter':printer}
         self.WriteConfig(nm=nm) #Write config directly to file
 
-    def changePrinter(self):
-        cmd = ['lpadmin','-d',self.getPrinter()]
-        #print(cmd)
-        try:
-            res = subprocess.Popen(cmd,stdout=subprocess.PIPE,
-                    stderr=None)
-            output,error = res.communicate()
-            if res.returncode > 0:
-                raise SetPrinterError
-            else:
-                print("Default-printer set to: %s" % (self.getPrinter()))
-        except:
-            raise
+    def changePrinter(self,printer=None):
+        if printer == None and self.getPrinter() == None:
+            print("No printer to set a default")
+        else:
+            cmd = ['lpadmin','-d',self.getPrinter() if printer == None else printer]
+            #print(cmd)
+            try:
+                res = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=None)
+                #res = subprocess.Popen(cmd,stdout=None, stderr=None)
+                output,error = res.communicate()
+                if res.returncode > 0:
+                    raise ESETPRINTER
+                else:
+                    print("Default-printer set to: %s" % (self.getPrinter() if printer == None else printer))
+            except:
+                raise
 
     def PrintConfig(self,nm=False):
         for i in self.nmconf if nm else self.conconf:
@@ -113,46 +122,28 @@ class Config():
                 print(j+':',self.nmconf[i][j] if nm else self.conconf[i][j])
 
     def WriteConfig(self,nm=False):
-        with open(self.nmcfile if nm else self.concfile, 'w') as configfile:
+        with open(self.conffile, 'w') as configfile:
             try:
-                if nm:
-                    self.nmconf.write(configfile)
-                else:
-                    self.conconf.write(configfile)
+                    self.conf.write(configfile)
             except:
+                #raise ESETPRINTER
                 exit("Failure during write config: %s" % (configfile))
 
 
 def setPrinter(args):
     for i in args.cf:
-        if args.setprinter == 'set':
-            X = Config(conn=i,setprinter='set')
-            nm = False
-    if args.setprinter == 'unset':
-        X = Config()
-        nm = True
-    X.setPrinter(printer=args.printer,nm=nm)
+        CONF = Config(conf = i)
+        CONF.setPrinter(printer=args.printer)
 
 def getPrinter(args):
     for i in args.cf:
-        if args.setprinter == 'set':
-            X = Config(conn=i,setprinter='set')
-            nm = False
-            print(X.getPrinter(nm=nm))
-    if args.setprinter == 'unset':
-        X = Config()
-        nm = True
-        print(X.getPrinter(nm=nm))
-    
-    #X = Config(setprinter='set')
-    #print(X.getPrinter())
+        CONF = Config(conf=i)
+        print(CONF.getPrinter())
 
 def changePrinter(args):
-    if args.setprinter == 'set':
-        X = Config(conn=args.cf[0],setprinter='set')
-    else:
-        X = Config()
-    X.changePrinter()
+    for i in args.cf:
+        CONF = Config(conf = i)
+        CONF.changePrinter(printer=args.printer)
 
 con= cups.Connection()
 
@@ -166,7 +157,7 @@ parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE',
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
 parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-        dest='printer', help="""CUPS Printer-Name to set default-Printer for
+        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
         connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
 parser.add_argument('-C', action='store_true', default=False, help="""Change
         the DefaultPrinter according to settings in
@@ -181,6 +172,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     args.nmpath = '/etc/NetworkManager'
     args.scpath = args.nmpath+'/system-connections'
+    args.nmcpath = args.nmpath+'/NetworkManager.conf'
     
     if args.connuuid == None: 
         args.connuuid = list()
@@ -204,50 +196,41 @@ if __name__ == '__main__':
 
     nmconfiles = dict()
     for i in os.listdir(args.scpath):
-        nmconfiles[i] = ConfigParser()
+        nmconfiles[i] = CaseConfigParser()
         nmconfiles[i].read(args.scpath+'/'+i)
 
-    #print(args.connname, args.connuuid, args.connfile)
     for i in nmconfiles.keys():
-        #print('A',i,nmconfiles[i]['connection']['id'],nmconfiles[i]['connection']['uuid'])
         for n in args.connname:
-            #print('B',n[0],nmconfiles[i]['connection']['id'])
             if n == nmconfiles[i]['connection']['id']: 
                 args.connfile.append(i)
         for u in args.connuuid:
-            #print('C',u)
             if u == nmconfiles[i]['connection']['uuid']: 
                 args.connfile.append(i)
 
     args.cf = list()
 
-    for f in set(args.connfile):
-        if f[0] == '/' and os.path.isfile(f):
-            args.cf.append(f)
-            continue
-        elif os.path.isfile(args.scpath+'/'+f):
-            args.cf.append(args.scpath+'/'+f)
-            continue
-        else:
-            print('not found: %s' % (f))
+    if len(args.connfile) == 0:
+        args.cf.append(args.nmcpath)
+    else:
+        for f in set(args.connfile):
+            if f[0] == '/' and os.path.isfile(f):
+                args.cf.append(f)
+                continue
+            elif os.path.isfile(args.scpath+'/'+f):
+                args.cf.append(args.scpath+'/'+f)
+                continue
+            else:
+                print('not found: %s' % (f))
 
     #print(args.setprinter)
-    if args.C:
-        #print('Change Printer')
-        changePrinter(args)
-    elif args.S:
+    if args.S:
         #print('Set Printer')
         setPrinter(args)
+    elif args.C:
+        #print('Change Printer')
+        changePrinter(args)
     elif args.G:
         #print('Get Printer')
         getPrinter(args)
 
-#    if args.P and setprinter == 'set':
-#        for i in args.connfile:
-#            X = Config(conn=i,setprinter=setprinter)
-#            print(X.changePrinter())
-#    elif args.P and setprinter == 'unset':
-#        X = Config()
-#        print(X.changePrinter())
-#    else:
-#        print('irgendwas anderes')
+#print("--- finished ---")
