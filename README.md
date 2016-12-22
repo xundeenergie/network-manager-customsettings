@@ -109,3 +109,5 @@ und der Drucker der Verbindung "UPC123456"
 
 Ist kein Drucker in einer Verbindung hinterlegt, so wird jener des NetworkManagers (aus NetworkManager.conf) genommen.
 
+# Zu den Paketen
+network-manager-defaultprinter-cups hat eine Abhängigkeit zu python3-cups das erst ab debian stretch verfügbar ist, daher gibt es für jessie noch das Paket network-manager-defaultprinter

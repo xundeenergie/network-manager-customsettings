@@ -1,8 +1,7 @@
 #!/bin/bash
-
 PRINTERSCRIPT=/etc/NetworkManager/defaultprinter.py
 DEFAULTPRINTER="PDF"
-echo $CONNECTION_ID $CONNECTION_UUID $CONNECTION_FILENAME
+echo $CONNECTION_ID $CONNECTION_UUID $CONNECTION_FILENAME $2
 
 
 ## Funktionen durchführen, je nach Aktion eine andere
@@ -11,13 +10,15 @@ case "$2" in
 		;;
 
         up)
-		$PRINTERSCRIPT -f "$CONNECTION_FILENAME" -C
+		$PRINTERSCRIPT -i "$CONNECTION_ID" -C
                 ;;
 
         pre-down)
 		;;
 
 	down)
+		#echo "DOWN DEFAULTPRINTER: " $(lpstat -d|awk '{print $NF}')
+		$PRINTERSCRIPT -i "$CONNECTION_ID" -S -p $(lpstat -d|awk '{print $NF}')
 		$PRINTERSCRIPT -C
                 ;;
 
@@ -40,6 +41,10 @@ case "$2" in
 		;;
 
 	dhcp6-change)
+		;;
+
+	connectivity-change)
+		#echo "CC DEFAULTPRINTER: " $(lpstat -d|awk '{print $NF}')
 		;;
 
        *)
