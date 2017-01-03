@@ -1,11 +1,11 @@
 Package: network-manager-defaultprinter
-Version: 0.4
+Version: 0.6
 Section: network
 Priority: extra
 Architecture: all
 Maintainer: Jakobus Schürz <xundeenergie@gmail.com>
 Homepage: http://github.com/xundeenergie/nm-defaultprinter
 Provides: network-manager-defaultprinter
-Depends: cups, cups-client, network-manager, python3
-Description: Set connection-depend default-printer with NetworkManager 
- Dispatcher-Skript for Network-Manager in python3 to set, change, query and delete default-printer depending on the connection for NetworkManager.
+Depends: network-manager-customsettings
+Description: Transitional dummy-package from network-manager-defaultprinter to network-manager-customsettings 
+ Delete this package after installing/upgrad it

@@ -6,7 +6,7 @@ import subprocess
 import socket
 import os
 import errno
-#import cups
+import cups
 
 
 __author__ = "Jakobus Schuerz <jakobus.schuerz@gmail.com>"
@@ -69,21 +69,21 @@ class Config():
             print('Missing config: %s' % (conf))
             raise ENOCFILE
 
-        self.nmpr = self.getDefaultPrinter(c=self.nmconf)
-        self.cpr = self.getDefaultPrinter(c=self.conf)
+        self.nmpr = self.getsystemupdate(c=self.nmconf)
+        self.cpr = self.getsystemupdate(c=self.conf)
 
-    def getDefaultPrinter(self,c=None):
+    def getsystemupdate(self,c=None):
         if 'custom' in c:
-            if 'DefaultPrinter' in c['custom']:
-                return(c['custom']['DefaultPrinter'])
+            if 'systemupdate' in c['custom']:
+                return(s2bool(c['custom']['systemupdate']))
             else:
-                return(None)
+                return(False)
 
     def getPrinter(self):
         #print(self.cpr,self.nmpr)
         if self.cpr == None:
             if self.nmpr == None:
-                return None
+                return False
             else:
                 return self.nmpr
         else:
@@ -91,19 +91,21 @@ class Config():
 
     def setPrinter(self,printer=None,nm=False):
         if printer == None:
-            self.conf.remove_option('custom','DefaultPrinter')
+            self.conf.remove_option('custom','systemupdate')
             if len(self.conf.options('custom')) == 0:
                 self.conf.remove_section('custom')
         else:
-            self.conf['custom'] = {'DefaultPrinter':printer}
+            if not self.conf.has_section('custom'):
+                self.conf.add_section('custom')
+            self.conf.set('custom','systemupdate',printer)
         self.WriteConfig(nm=nm) #Write config directly to file
 
     def changePrinter(self,printer=None):
         if printer == None and self.getPrinter() == None:
             print("No printer to set a default")
         else:
-            cmd = ['lpadmin','-d',self.getPrinter() if printer == None else printer]
-            #print(cmd)
+            upd = self.getPrinter() if printer == None else printer
+            cmd = ['systemctl', 'start' if upd == True else 'stop', 'update.target']
             try:
                 res = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=None)
                 #res = subprocess.Popen(cmd,stdout=None, stderr=None)
@@ -111,7 +113,7 @@ class Config():
                 if res.returncode > 0:
                     raise ESETPRINTER
                 else:
-                    print("Default-printer set to: %s" % (self.getPrinter() if printer == None else printer))
+                    print("Do updates: %s" % (self.getPrinter() if printer == None else printer))
             except:
                 raise
 
@@ -145,7 +147,7 @@ def changePrinter(args):
         CONF = Config(conf = i)
         CONF.changePrinter(printer=args.printer)
 
-#con= cups.Connection()
+con= cups.Connection()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='0.1.0')
@@ -156,20 +158,20 @@ parser.add_argument('-i', '--conn-name', dest='connname', metavar='CON_ID',
 parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE', 
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
-#parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-#        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-#        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
 parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
         dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-        connections.""")
+        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
+#parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
+#        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
+#        connections.""")
 parser.add_argument('-C', action='store_true', default=False, help="""Change
-        the DefaultPrinter according to settings in
+        the systemupdate according to settings in
         network-manager-config-files""")
 parser.add_argument('-S', action='store_true', default=False, help="""Set
-        the DefaultPrinter for Network-Manager or Connection (if CONN_FILE is
+        the systemupdate for Network-Manager or Connection (if CONN_FILE is
         given)""")
 parser.add_argument('-G', action='store_true', default=False, help="""Get
-        the DefaultPrinter""")
+        the systemupdate""")
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -225,7 +227,7 @@ if __name__ == '__main__':
             else:
                 print('not found: %s' % (f))
 
-    #print(args.setprinter)
+    #print(args)
     if args.S:
         #print('Set Printer')
         setPrinter(args)

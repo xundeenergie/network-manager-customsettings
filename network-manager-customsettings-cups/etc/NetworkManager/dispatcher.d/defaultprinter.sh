@@ -1,5 +1,6 @@
 #!/bin/bash
 PRINTERSCRIPT=/etc/NetworkManager/defaultprinter.py
+UPDATESCRIPT=/etc/NetworkManager/mkupdate.py
 DEFAULTPRINTER="PDF"
 echo $CONNECTION_ID $CONNECTION_UUID $CONNECTION_FILENAME $2
 
@@ -11,6 +12,7 @@ case "$2" in
 
         up)
 		$PRINTERSCRIPT -i "$CONNECTION_ID" -C
+		$UPDATESCRIPT -i "$CONNECTION_ID" -C
                 ;;
 
         pre-down)
@@ -20,6 +22,7 @@ case "$2" in
 		#echo "DOWN DEFAULTPRINTER: " $(lpstat -d|awk '{print $NF}')
 		$PRINTERSCRIPT -i "$CONNECTION_ID" -S -p $(lpstat -d|awk '{print $NF}')
 		$PRINTERSCRIPT -C
+		$UPDATESCRIPT -C
                 ;;
 
 	vpn-pre-up)
