@@ -6,7 +6,12 @@ import subprocess
 import socket
 import os
 import errno
-#import cups
+try:
+    import cups
+    CUPS=True
+except:
+    CUPS=False
+    pass
 
 
 __author__ = "Jakobus Schuerz <jakobus.schuerz@gmail.com>"
@@ -147,7 +152,10 @@ def changePrinter(args):
         CONF = Config(conf = i)
         CONF.changePrinter(printer=args.printer)
 
-#con= cups.Connection()
+try:
+    con= cups.Connection()
+except:
+    pass
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='0.1.0')
@@ -158,12 +166,15 @@ parser.add_argument('-i', '--conn-name', dest='connname', metavar='CON_ID',
 parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE', 
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
-#parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-#        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-#        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
-parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-        connections.""")
+if CUPS:
+    parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
+            dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
+            connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
+else:
+    parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
+            dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
+            connections.""")
+
 parser.add_argument('-C', action='store_true', default=False, help="""Change
         the DefaultPrinter according to settings in
         network-manager-config-files""")

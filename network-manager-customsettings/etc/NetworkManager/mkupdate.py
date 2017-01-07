@@ -6,7 +6,7 @@ import subprocess
 import socket
 import os
 import errno
-import cups
+#import cups
 
 
 __author__ = "Jakobus Schuerz <jakobus.schuerz@gmail.com>"
@@ -45,7 +45,8 @@ class CaseConfigParser(ConfigParser):
         return optionstr
 
 class Config():
-    def __init__(self, conf='', nmconf='/etc/NetworkManager/NetworkManager.conf'):
+    def __init__(self, conf='', conn=False, nmconf='/etc/NetworkManager/NetworkManager.conf'):
+        self.conn = conn
         if nmconf == None: 
             raise ENOCFILE
         elif conf == nmconf:
@@ -139,15 +140,15 @@ def setPrinter(args):
 
 def getPrinter(args):
     for i in args.cf:
-        CONF = Config(conf=i)
-        print(CONF.getPrinter())
+        CONF = Config(conf=i,conn=args.c)
+        return(CONF.getPrinter())
 
 def changePrinter(args):
     for i in args.cf:
         CONF = Config(conf = i)
         CONF.changePrinter(printer=args.printer)
 
-con= cups.Connection()
+#con= cups.Connection()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='0.1.0')
@@ -158,12 +159,12 @@ parser.add_argument('-i', '--conn-name', dest='connname', metavar='CON_ID',
 parser.add_argument('-f', '--conn-file', dest='connfile', metavar='CON_FILE', 
         nargs='+', action='append', help="""one or more files of nm-connections, absolute or relative to
         /etc/NetworkManager/systemd-connections""")
-parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
-        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
 #parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
 #        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
-#        connections.""")
+#        connections. This printers are: %s""" % ('\n'.join(con.getPrinters().keys())))
+parser.add_argument('-p', '--printer', metavar='CUPS-Printer-Name',
+        dest='printer', default=None, help="""CUPS Printer-Name to set default-Printer for
+        connections.""")
 parser.add_argument('-C', action='store_true', default=False, help="""Change
         the systemupdate according to settings in
         network-manager-config-files""")
@@ -171,7 +172,9 @@ parser.add_argument('-S', action='store_true', default=False, help="""Set
         the systemupdate for Network-Manager or Connection (if CONN_FILE is
         given)""")
 parser.add_argument('-G', action='store_true', default=False, help="""Get
-        the systemupdate""")
+        the systemupdate for NetworkManager-Default""")
+parser.add_argument('-c', action='store_true', default=False, help="""Get
+        the systemupdate for active connection""")
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -184,10 +187,22 @@ if __name__ == '__main__':
     else:
         args.connuuid =  [item for sublist in args.connuuid for item in sublist]
 
-    if args.connname == None: 
-        args.connname = list()
+    if args.c:
+        cmd=['nmcli', '-t', '-f', 'NAME', 'con', 'show', '--active']
+        try:
+            res = subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=None)
+            output,error = res.communicate()
+            if res.returncode > 0:
+                raise ESETPRINTER
+            else:
+                args.connname=[output.decode().strip()]
+        except:
+            raise
     else:
-        args.connname =  [item for sublist in args.connname for item in sublist]
+        if args.connname == None: 
+            args.connname = list()
+        else:
+            args.connname =  [item for sublist in args.connname for item in sublist]
 
     if args.connfile == None: 
         args.connfile = list()
@@ -236,6 +251,7 @@ if __name__ == '__main__':
         changePrinter(args)
     elif args.G:
         #print('Get Printer')
-        getPrinter(args)
+        print(getPrinter(args))
+        exit(0 if getPrinter(args) else 1)
 
 #print("--- finished ---")
