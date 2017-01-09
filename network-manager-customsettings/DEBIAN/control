@@ -1,5 +1,5 @@
 Package: network-manager-customsettings
-Version: 0.12.5
+Version: 0.12.6
 Section: network
 Priority: extra
 Architecture: all
