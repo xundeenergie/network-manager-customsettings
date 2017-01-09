@@ -1,6 +1,6 @@
 #!/bin/bash
-PRINTERSCRIPT=/etc/NetworkManager/defaultprinter.py
-UPDATESCRIPT=/etc/NetworkManager/mkupdate.py
+PRINTERSCRIPT=/usr/bin/nm-defaultprinter.py
+UPDATESCRIPT=/usr/bin/nm-updatecheck.py
 DEFAULTPRINTER="PDF"
 echo $CONNECTION_ID $CONNECTION_UUID $CONNECTION_FILENAME $2
 

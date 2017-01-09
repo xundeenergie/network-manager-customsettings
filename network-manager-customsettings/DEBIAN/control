@@ -6,7 +6,7 @@ Architecture: all
 Maintainer: Jakobus Schürz <xundeenergie@gmail.com>
 Homepage: http://github.com/xundeenergie/nm-customsettings
 Provides: network-manager-customsettings
-Depends: cups, cups-client, network-manager, python3
+Depends: cups, cups-client, cups-pdf, network-manager, python3, my-services
 Description: Set some custom-settings depending on connections in NetworkManager.
  Set connection-depend default-printer with NetworkManager 
  Set connection-depend updates (or do them not on your private mobile-connect to save data-volume)
