@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo -n "make updates: "
 if /usr/bin/nm-updatecheck.py -G -c; then
   /bin/systemctl start update.target
 else
