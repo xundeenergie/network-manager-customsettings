@@ -1,12 +1,12 @@
 Package: network-manager-customsettings
-Version: 0.12.11
+Version: 0.12.13
 Section: network
 Priority: extra
 Architecture: all
 Maintainer: Jakobus Schürz <xundeenergie@gmail.com>
 Homepage: http://github.com/xundeenergie/nm-customsettings
 Provides: network-manager-customsettings
-Depends: cups, cups-client, cups-pdf, network-manager, python3, 
+Depends: cups, cups-client, cups-pdf, network-manager, python3
 Recommends: my-services
 Conflicts: network-manager-defaultprinter
 Description: Set some custom-settings depending on connections in NetworkManager.
