@@ -1,0 +1,4 @@
+[Unit]
+Description=Common connection status online
+#Wants=network-online.target
+#After=network-online.target
